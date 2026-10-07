@@ -7,7 +7,7 @@ const PADDLE_W = 12;
 const PADDLE_H = 90;
 const PADDLE_SPEED = 7;
 const BALL_SIZE = 12;
-const BALL_SPEED = 6;
+const BALL_SPEED = 3.5;
 const WIN_SCORE = 7;
 
 const left = { x: 20, y: H / 2 - PADDLE_H / 2, score: 0 };

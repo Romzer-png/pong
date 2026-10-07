@@ -1,0 +1,16 @@
+# Secrets et variables d'environnement
+.env
+.env.*
+*.pem
+*.key
+
+# Dépendances et builds
+node_modules/
+dist/
+
+# Fichiers système / éditeur
+.DS_Store
+Thumbs.db
+*:Zone.Identifier
+.vscode/
+.idea/
