@@ -3,30 +3,59 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Pong</title>
+  <title>Pong Impérial</title>
   <style>
     body {
       margin: 0;
-      height: 100vh;
+      min-height: 100vh;
+      padding: 16px;
+      box-sizing: border-box;
       display: flex;
       flex-direction: column;
       align-items: center;
       justify-content: center;
-      background: #111;
-      color: #eee;
-      font-family: monospace;
+      background: radial-gradient(ellipse at center, #1b2766 0%, #070b22 100%);
+      color: #f4f1e6;
+      font-family: Georgia, "Times New Roman", serif;
     }
+    h1 {
+      margin: 0 0 12px;
+      color: #d4af37;
+      font-weight: normal;
+      letter-spacing: 0.3em;
+      text-transform: uppercase;
+      font-size: clamp(1.2rem, 4vw, 2rem);
+    }
+    h1::before, h1::after { content: " ✦ "; font-size: 0.6em; vertical-align: middle; }
     canvas {
-      background: #000;
-      border: 2px solid #eee;
-      max-width: 95vw;
+      max-width: 100%;
+      height: auto;
+      border: 3px solid #d4af37;
+      box-shadow: 0 0 0 6px #14215a, 0 0 0 8px #d4af37, 0 12px 40px rgba(0, 0, 0, 0.6);
     }
-    p { opacity: 0.7; }
+    p {
+      margin-top: 20px;
+      text-align: center;
+      color: #e8d9a8;
+      font-size: 0.95rem;
+      line-height: 1.6;
+    }
+    kbd {
+      border: 1px solid #d4af37;
+      border-radius: 3px;
+      padding: 0 5px;
+      font-family: inherit;
+    }
   </style>
 </head>
 <body>
+  <h1>Pong Impérial</h1>
   <canvas id="game" width="800" height="500"></canvas>
-  <p>Contre l'IA : Z / S ou ↑ / ↓ &nbsp;|&nbsp; À deux : Z / S et ↑ / ↓ &nbsp;|&nbsp; Espace : pause &nbsp;|&nbsp; Échap : menu &nbsp;|&nbsp; Premier à 7 points</p>
+  <p>
+    Contre l'IA : <kbd>Z</kbd> <kbd>S</kbd> ou <kbd>↑</kbd> <kbd>↓</kbd> &nbsp;·&nbsp;
+    À deux : <kbd>Z</kbd> <kbd>S</kbd> et <kbd>↑</kbd> <kbd>↓</kbd><br>
+    <kbd>Espace</kbd> pause &nbsp;·&nbsp; <kbd>Échap</kbd> menu &nbsp;·&nbsp; Premier à 7 points
+  </p>
   <script src="game.js"></script>
 </body>
 </html>

@@ -1,6 +1,6 @@
-# Pong
+# Pong Impérial
 
-Un Pong en HTML/JavaScript, codé en vibecoding. On peut jouer seul contre une IA ou à deux.
+Un Pong en HTML/JavaScript sur le thème de Napoléon, codé en vibecoding. Napoléon affronte Wellington : on peut jouer seul contre une IA ou à deux.
 
 ## Jouer
 

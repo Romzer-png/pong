@@ -14,9 +14,20 @@ const WIN_SCORE = 7;
 const AI_SPEED = 4.5;
 const AI_MAX_ERROR = PADDLE_H * 0.45;
 
+// Thème impérial
+const NAVY = "#14215a";
+const GOLD = "#d4af37";
+const GOLD_LIGHT = "#f3dc8a";
+const BLEU = "#1f3c9c";
+const BLANC = "#f4f1e6";
+const ROUGE = "#b3202a";
+const FONT = "Georgia, 'Times New Roman', serif";
+const TRAIL_LENGTH = 12;
+
 const left = { x: 20, y: H / 2 - PADDLE_H / 2, score: 0 };
 const right = { x: W - 20 - PADDLE_W, y: H / 2 - PADDLE_H / 2, score: 0 };
 const ball = { x: 0, y: 0, vx: 0, vy: 0 };
+const trail = [];
 
 const keys = {};
 let mode = null; // null = menu, "ai" = contre l'IA, "pvp" = deux joueurs
@@ -62,6 +73,7 @@ function resetBall(direction) {
   const angle = (Math.random() * Math.PI) / 3 - Math.PI / 6; // ±30°
   ball.vx = direction * BALL_SPEED * Math.cos(angle);
   ball.vy = BALL_SPEED * Math.sin(angle);
+  trail.length = 0;
   newAiError();
 }
 
@@ -123,6 +135,9 @@ function update() {
     movePaddle(right, ["arrowup"], ["arrowdown"]);
   }
 
+  trail.push({ x: ball.x + BALL_SIZE / 2, y: ball.y + BALL_SIZE / 2 });
+  if (trail.length > TRAIL_LENGTH) trail.shift();
+
   ball.x += ball.vx;
   ball.y += ball.vy;
 
@@ -153,47 +168,204 @@ function update() {
     resetBall(1);
   }
 
-  if (left.score >= WIN_SCORE) winner = mode === "ai" ? "Tu gagnes !" : "Joueur 1 gagne !";
-  else if (right.score >= WIN_SCORE) winner = mode === "ai" ? "L'IA gagne !" : "Joueur 2 gagne !";
+  if (left.score >= WIN_SCORE) {
+    winner = mode === "ai" ? ["Austerlitz !", "Victoire de l'Empereur"] : ["Austerlitz !", "Napoléon gagne"];
+  } else if (right.score >= WIN_SCORE) {
+    winner = mode === "ai" ? ["Waterloo…", "Wellington (l'IA) l'emporte"] : ["Waterloo…", "Wellington gagne"];
+  }
+}
+
+// ---------- Décor (dessiné une seule fois dans un canvas hors écran) ----------
+
+function drawBee(c, x, y, s) {
+  c.save();
+  c.translate(x, y);
+  c.scale(s, s);
+  c.beginPath(); // ailes
+  c.ellipse(-5, -3, 6, 3.5, -0.6, 0, Math.PI * 2);
+  c.ellipse(5, -3, 6, 3.5, 0.6, 0, Math.PI * 2);
+  c.fill();
+  c.beginPath(); // tête, corps, abdomen
+  c.arc(0, -7, 2.2, 0, Math.PI * 2);
+  c.ellipse(0, -2.5, 2.6, 3, 0, 0, Math.PI * 2);
+  c.ellipse(0, 5, 3.4, 6, 0, 0, Math.PI * 2);
+  c.fill();
+  c.restore();
+}
+
+function drawLaurel(c, cx, cy, r) {
+  for (const side of [-1, 1]) {
+    for (let i = 0; i < 11; i++) {
+      // de bas en haut le long de chaque moitié de la couronne
+      const a = Math.PI / 2 + side * (0.25 + i * 0.22);
+      const x = cx + r * Math.cos(a);
+      const y = cy + r * Math.sin(a);
+      const tangent = a + side * (Math.PI / 2);
+      for (const tilt of [-0.5, 0.5]) {
+        c.beginPath();
+        c.ellipse(
+          x + Math.cos(tangent + tilt) * 7,
+          y + Math.sin(tangent + tilt) * 7,
+          9, 3.5, tangent + tilt, 0, Math.PI * 2
+        );
+        c.fill();
+      }
+    }
+  }
+}
+
+function buildBackground() {
+  const bg = document.createElement("canvas");
+  bg.width = W;
+  bg.height = H;
+  const c = bg.getContext("2d");
+
+  const grad = c.createRadialGradient(W / 2, H / 2, 40, W / 2, H / 2, W * 0.65);
+  grad.addColorStop(0, "#26398a");
+  grad.addColorStop(1, "#0a1235");
+  c.fillStyle = grad;
+  c.fillRect(0, 0, W, H);
+
+  // Semis d'abeilles impériales
+  c.fillStyle = GOLD;
+  c.globalAlpha = 0.13;
+  for (let row = 0, y = 35; y < H; y += 60, row++) {
+    for (let x = row % 2 ? 70 : 30; x < W; x += 80) drawBee(c, x, y, 1.1);
+  }
+
+  // « N » couronné de laurier au centre
+  c.globalAlpha = 0.22;
+  drawLaurel(c, W / 2, H / 2, 85);
+  c.font = `bold 110px ${FONT}`;
+  c.textAlign = "center";
+  c.textBaseline = "middle";
+  c.fillText("N", W / 2, H / 2 + 6);
+
+  // Double cadre doré
+  c.globalAlpha = 1;
+  c.strokeStyle = GOLD;
+  c.lineWidth = 3;
+  c.strokeRect(6, 6, W - 12, H - 12);
+  c.lineWidth = 1;
+  c.strokeRect(12, 12, W - 24, H - 24);
+  return bg;
+}
+
+const background = buildBackground();
+
+// ---------- Rendu ----------
+
+function drawNapoleonPaddle(p) {
+  // Bleu-blanc-rouge de haut en bas
+  const third = PADDLE_H / 3;
+  ctx.fillStyle = BLEU;
+  ctx.fillRect(p.x, p.y, PADDLE_W, third);
+  ctx.fillStyle = BLANC;
+  ctx.fillRect(p.x, p.y + third, PADDLE_W, third);
+  ctx.fillStyle = ROUGE;
+  ctx.fillRect(p.x, p.y + 2 * third, PADDLE_W, third);
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(p.x, p.y, PADDLE_W, PADDLE_H);
+}
+
+function drawWellingtonPaddle(p) {
+  // Tunique rouge et baudriers blancs croisés
+  ctx.fillStyle = ROUGE;
+  ctx.fillRect(p.x, p.y, PADDLE_W, PADDLE_H);
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(p.x, p.y, PADDLE_W, PADDLE_H);
+  ctx.clip();
+  ctx.strokeStyle = BLANC;
+  ctx.lineWidth = 2.5;
+  ctx.beginPath();
+  ctx.moveTo(p.x, p.y + 25);
+  ctx.lineTo(p.x + PADDLE_W, p.y + 65);
+  ctx.moveTo(p.x + PADDLE_W, p.y + 25);
+  ctx.lineTo(p.x, p.y + 65);
+  ctx.stroke();
+  ctx.restore();
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 2;
+  ctx.strokeRect(p.x, p.y, PADDLE_W, PADDLE_H);
+}
+
+function drawCannonball() {
+  // Traînée de fumée
+  trail.forEach((t, i) => {
+    const k = (i + 1) / trail.length;
+    ctx.fillStyle = `rgba(200, 200, 200, ${0.25 * k})`;
+    ctx.beginPath();
+    ctx.arc(t.x, t.y, 3 + 4 * k, 0, Math.PI * 2);
+    ctx.fill();
+  });
+
+  const r = BALL_SIZE / 2;
+  const cx = ball.x + r;
+  const cy = ball.y + r;
+  const grad = ctx.createRadialGradient(cx - 2, cy - 2, 1, cx, cy, r + 1);
+  grad.addColorStop(0, "#9a9a9a");
+  grad.addColorStop(0.5, "#3a3a3a");
+  grad.addColorStop(1, "#0d0d0d");
+  ctx.fillStyle = grad;
+  ctx.beginPath();
+  ctx.arc(cx, cy, r + 1, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+function drawScores() {
+  ctx.fillStyle = GOLD_LIGHT;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+  ctx.font = `bold 48px ${FONT}`;
+  ctx.fillText(left.score, W / 4, 70);
+  ctx.fillText(right.score, (3 * W) / 4, 70);
+  ctx.font = `14px ${FONT}`;
+  ctx.fillStyle = GOLD;
+  ctx.fillText("NAPOLÉON", W / 4, 92);
+  ctx.fillText(mode === "ai" ? "WELLINGTON (IA)" : "WELLINGTON", (3 * W) / 4, 92);
 }
 
 function drawOverlay(title, subtitle) {
-  ctx.fillStyle = "rgba(0, 0, 0, 0.7)";
+  ctx.fillStyle = "rgba(10, 18, 53, 0.82)";
   ctx.fillRect(0, 0, W, H);
-  ctx.fillStyle = "#eee";
   ctx.textAlign = "center";
-  ctx.font = "36px monospace";
-  ctx.fillText(title, W / 2, H / 2 - 20);
-  ctx.font = "18px monospace";
-  subtitle.forEach((line, i) => ctx.fillText(line, W / 2, H / 2 + 25 + i * 28));
+  ctx.textBaseline = "alphabetic";
+  ctx.fillStyle = GOLD_LIGHT;
+  ctx.font = `bold 44px ${FONT}`;
+  ctx.fillText(title, W / 2, H / 2 - 30);
+  ctx.strokeStyle = GOLD;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(W / 2 - 140, H / 2 - 12);
+  ctx.lineTo(W / 2 + 140, H / 2 - 12);
+  ctx.stroke();
+  ctx.fillStyle = BLANC;
+  ctx.font = `20px ${FONT}`;
+  subtitle.forEach((line, i) => ctx.fillText(line, W / 2, H / 2 + 22 + i * 30));
 }
 
 function draw() {
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, W, H);
+  ctx.drawImage(background, 0, 0);
 
-  // Filet
-  ctx.fillStyle = "#444";
-  for (let y = 0; y < H; y += 30) ctx.fillRect(W / 2 - 2, y, 4, 15);
+  // Filet doré
+  ctx.fillStyle = GOLD;
+  ctx.globalAlpha = 0.5;
+  for (let y = 20; y < H - 20; y += 26) ctx.fillRect(W / 2 - 1.5, y, 3, 12);
+  ctx.globalAlpha = 1;
 
-  // Raquettes et balle
-  ctx.fillStyle = "#eee";
-  ctx.fillRect(left.x, left.y, PADDLE_W, PADDLE_H);
-  ctx.fillRect(right.x, right.y, PADDLE_W, PADDLE_H);
-  ctx.fillRect(ball.x, ball.y, BALL_SIZE, BALL_SIZE);
-
-  // Score
-  ctx.font = "48px monospace";
-  ctx.textAlign = "center";
-  ctx.fillText(left.score, W / 4, 60);
-  ctx.fillText(right.score, (3 * W) / 4, 60);
+  drawScores();
+  drawNapoleonPaddle(left);
+  drawWellingtonPaddle(right);
+  if (mode) drawCannonball();
 
   if (!mode) {
-    drawOverlay("PONG", ["1 : jouer contre l'IA", "2 : jouer à deux"]);
+    drawOverlay("Pong Impérial", ["1 : Napoléon contre l'IA", "2 : Napoléon contre Wellington, à deux"]);
   } else if (winner) {
-    drawOverlay(winner, ["Espace pour rejouer", "Échap pour le menu"]);
+    drawOverlay(winner[0], [winner[1], "Espace pour rejouer · Échap pour le menu"]);
   } else if (paused) {
-    drawOverlay("PAUSE", ["Espace pour reprendre", "Échap pour le menu"]);
+    drawOverlay("Pause", ["Espace pour reprendre", "Échap pour le menu"]);
   }
 }
 
